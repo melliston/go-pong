@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,8 +13,13 @@ import (
 type Game struct {
 	screen tcell.Screen
 	ball   Ball
-	p1     Paddle
-	p2     Paddle
+	p1     Player
+	p2     Player
+}
+
+type Player struct {
+	Paddle Paddle
+	Score  int
 }
 
 type Sprite struct {
@@ -66,13 +72,13 @@ func main() {
 				screen.Fini()
 				os.Exit(0)
 			} else if event.Key() == tcell.KeyUp {
-				game.p2.MoveUp(0)
+				game.p2.Paddle.MoveUp(0)
 			} else if event.Key() == tcell.KeyDown {
-				game.p2.MoveDown(height)
+				game.p2.Paddle.MoveDown(height)
 			} else if event.Rune() == 'w' {
-				game.p1.MoveUp(0)
+				game.p1.Paddle.MoveUp(0)
 			} else if event.Rune() == 's' {
-				game.p1.MoveDown(height)
+				game.p1.Paddle.MoveDown(height)
 			}
 
 		}
@@ -83,24 +89,30 @@ func (g *Game) Init() {
 
 	width, _ := g.screen.Size()
 
-	p1 := Paddle{
-		Sprite: Sprite{
-			Width:  1,
-			Height: 6,
-			Y:      3,
-			X:      5,
+	p1 := Player{
+		Score: 0,
+		Paddle: Paddle{
+			Sprite: Sprite{
+				Width:  1,
+				Height: 6,
+				Y:      3,
+				X:      5,
+			},
+			YSpeed: 3,
 		},
-		YSpeed: 3,
 	}
 
-	p2 := Paddle{
-		Sprite: Sprite{
-			Width:  1,
-			Height: 6,
-			Y:      3,
-			X:      width - 5,
+	p2 := Player{
+		Score: 0,
+		Paddle: Paddle{
+			Sprite: Sprite{
+				Width:  1,
+				Height: 6,
+				Y:      3,
+				X:      width - 5,
+			},
+			YSpeed: 3,
 		},
-		YSpeed: 3,
 	}
 
 	ball := Ball{
@@ -135,18 +147,36 @@ func (g *Game) Loop() {
 		g.ball.CheckBoundingBox(width, height)
 
 		drawSprite(g.screen, g.ball.Sprite.X, g.ball.Sprite.Y, g.ball.Sprite.X+g.ball.Sprite.Width, g.ball.Sprite.Y+g.ball.Sprite.Height, defStyle, g.ball.Draw())
-		drawSprite(g.screen, g.p1.Sprite.X, g.p1.Sprite.Y, g.p1.Sprite.X+g.p1.Sprite.Width, g.p1.Sprite.Y+g.p1.Sprite.Height, paddleStyle, g.p1.Draw())
-		drawSprite(g.screen, g.p2.Sprite.X, g.p2.Sprite.Y, g.p2.Sprite.X+g.p2.Sprite.Width, g.p2.Sprite.Y+g.p2.Sprite.Height, paddleStyle, g.p2.Draw())
+		drawSprite(g.screen, g.p1.Paddle.Sprite.X, g.p1.Paddle.Sprite.Y, g.p1.Paddle.Sprite.X+g.p1.Paddle.Sprite.Width, g.p1.Paddle.Sprite.Y+g.p1.Paddle.Sprite.Height, paddleStyle, g.p1.Paddle.Draw())
+		drawSprite(g.screen, g.p2.Paddle.Sprite.X, g.p2.Paddle.Sprite.Y, g.p2.Paddle.Sprite.X+g.p2.Paddle.Sprite.Width, g.p2.Paddle.Sprite.Y+g.p2.Paddle.Sprite.Height, paddleStyle, g.p2.Paddle.Draw())
+
+		// Scores
+		drawSprite(g.screen, 10, 1, 1, 1, defStyle, strconv.Itoa(g.p1.Score))
+		drawSprite(g.screen, width-10, 1, 1, 1, defStyle, strconv.Itoa(g.p2.Score))
+
+		// Game Title
+		drawSprite(g.screen, (width/2)-3, 1, (width/2)-3+6, 1, defStyle, "GoPong")
 
 		// Check for collisions with the Paddles
-		if checkCollision(g.ball.Sprite, g.p1.Sprite) {
+		if checkCollision(g.ball.Sprite, g.p1.Paddle.Sprite) {
 			g.ball.reverseX()
 			g.ball.reverseY()
 		}
 
-		if checkCollision(g.ball.Sprite, g.p2.Sprite) {
+		if checkCollision(g.ball.Sprite, g.p2.Paddle.Sprite) {
 			g.ball.reverseX()
 			g.ball.reverseY()
+		}
+
+		// Check to see if the ball passes left or right edge of the screen
+		if g.ball.Sprite.X <= 0 {
+			g.p2.Score++
+			g.ball.Reset(width/2, height/2, -1, 1)
+		}
+
+		if g.ball.Sprite.X >= width {
+			g.p1.Score++
+			g.ball.Reset(width/2, height/2, 1, 1)
 		}
 
 		time.Sleep(40 * time.Millisecond)
@@ -194,6 +224,13 @@ func (b *Ball) Update() {
 	b.Sprite.Y += b.YSpeed
 }
 
+func (b *Ball) Reset(x, y, xSpeed, ySpeed int) {
+	b.Sprite.X = x
+	b.Sprite.Y = y
+	b.XSpeed = xSpeed
+	b.YSpeed = ySpeed
+}
+
 func (b *Ball) reverseX() {
 	b.XSpeed *= -1
 }
@@ -203,10 +240,6 @@ func (b *Ball) reverseY() {
 }
 
 func (b *Ball) CheckBoundingBox(maxWidth int, maxHeight int) {
-	if b.Sprite.X <= 0 || b.Sprite.X > maxWidth-1 {
-		b.reverseX()
-	}
-
 	if b.Sprite.Y <= 0 || b.Sprite.Y > maxHeight-1 {
 		b.reverseY()
 	}
