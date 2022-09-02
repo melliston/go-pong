@@ -11,10 +11,11 @@ import (
 )
 
 type Game struct {
-	screen tcell.Screen
-	ball   Ball
-	p1     Player
-	p2     Player
+	screen      tcell.Screen
+	ball        Ball
+	p1          Player
+	p2          Player
+	targetScore int
 }
 
 type Player struct {
@@ -80,7 +81,6 @@ func main() {
 			} else if event.Rune() == 's' {
 				game.p1.Paddle.MoveDown(height)
 			}
-
 		}
 	}
 }
@@ -129,6 +129,7 @@ func (g *Game) Init() {
 	g.ball = ball
 	g.p1 = p1
 	g.p2 = p2
+	g.targetScore = 9
 }
 
 func (g *Game) Loop() {
@@ -137,13 +138,21 @@ func (g *Game) Loop() {
 
 	paddleStyle := tcell.StyleDefault.Background(tcell.ColorWhite).Foreground(tcell.ColorWhite)
 
+	width, height := g.screen.Size()
+
 	for {
 		g.screen.Clear()
 
+		// Check game over
+		if g.CheckGameOver() {
+			drawSprite(g.screen, (width/2)-4, (height / 2), (width/2)+5, (height / 2), defStyle, "Game Over")
+			drawSprite(g.screen, (width/2)-(len(g.WinnerString())/2), (height/2)+2, (width/2)+(len(g.WinnerString())+1/2), (height/2)+2, defStyle, g.WinnerString())
+			g.screen.Show()
+			return
+		}
+
 		// Update the ball position
 		g.ball.Update()
-
-		width, height := g.screen.Size()
 		g.ball.CheckBoundingBox(width, height)
 
 		drawSprite(g.screen, g.ball.Sprite.X, g.ball.Sprite.Y, g.ball.Sprite.X+g.ball.Sprite.Width, g.ball.Sprite.Y+g.ball.Sprite.Height, defStyle, g.ball.Draw())
@@ -182,6 +191,20 @@ func (g *Game) Loop() {
 		time.Sleep(40 * time.Millisecond)
 		g.screen.Show()
 	}
+}
+
+func (g *Game) CheckGameOver() bool {
+	if g.p1.Score == g.targetScore || g.p2.Score == g.targetScore {
+		return true
+	}
+	return false
+}
+
+func (g *Game) WinnerString() string {
+	if g.p1.Score > g.p2.Score {
+		return "P1 Wins"
+	}
+	return "P2 Wins"
 }
 
 // drawSprite Draws a string easily - taken from the tcell getting started tutorial.
