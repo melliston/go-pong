@@ -11,11 +11,11 @@ import (
 )
 
 type Game struct {
-	screen      tcell.Screen
-	ball        Ball
-	p1          Player
-	p2          Player
-	targetScore int
+	Screen      tcell.Screen
+	Ball        Ball
+	P1          Player
+	P2          Player
+	TargetScore int
 }
 
 type Player struct {
@@ -55,7 +55,7 @@ func main() {
 
 	// Setup the game
 	game := Game{
-		screen: screen,
+		Screen: screen,
 	}
 	game.Init()
 
@@ -73,13 +73,13 @@ func main() {
 				screen.Fini()
 				os.Exit(0)
 			} else if event.Key() == tcell.KeyUp {
-				game.p2.Paddle.MoveUp(0)
+				game.P2.Paddle.MoveUp(0)
 			} else if event.Key() == tcell.KeyDown {
-				game.p2.Paddle.MoveDown(height)
+				game.P2.Paddle.MoveDown(height)
 			} else if event.Rune() == 'w' {
-				game.p1.Paddle.MoveUp(0)
+				game.P1.Paddle.MoveUp(0)
 			} else if event.Rune() == 's' {
-				game.p1.Paddle.MoveDown(height)
+				game.P1.Paddle.MoveDown(height)
 			}
 		}
 	}
@@ -87,7 +87,7 @@ func main() {
 
 func (g *Game) Init() {
 
-	width, _ := g.screen.Size()
+	width, _ := g.Screen.Size()
 
 	p1 := Player{
 		Score: 0,
@@ -126,82 +126,82 @@ func (g *Game) Init() {
 		YSpeed: 1,
 	}
 
-	g.ball = ball
-	g.p1 = p1
-	g.p2 = p2
-	g.targetScore = 9
+	g.Ball = ball
+	g.P1 = p1
+	g.P2 = p2
+	g.TargetScore = 9
 }
 
 func (g *Game) Loop() {
 	defStyle := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
-	g.screen.SetStyle(defStyle)
+	g.Screen.SetStyle(defStyle)
 
 	paddleStyle := tcell.StyleDefault.Background(tcell.ColorWhite).Foreground(tcell.ColorWhite)
 
-	width, height := g.screen.Size()
+	width, height := g.Screen.Size()
 
 	for {
-		g.screen.Clear()
+		g.Screen.Clear()
 
 		// Check game over
 		if g.CheckGameOver() {
-			drawSprite(g.screen, (width/2)-4, (height / 2), (width/2)+5, (height / 2), defStyle, "Game Over")
-			drawSprite(g.screen, (width/2)-(len(g.WinnerString())/2), (height/2)+2, (width/2)+(len(g.WinnerString())+1/2), (height/2)+2, defStyle, g.WinnerString())
-			g.screen.Show()
+			drawSprite(g.Screen, (width/2)-4, (height / 2), (width/2)+5, (height / 2), defStyle, "Game Over")
+			drawSprite(g.Screen, (width/2)-(len(g.WinnerString())/2), (height/2)+2, (width/2)+(len(g.WinnerString())+1/2), (height/2)+2, defStyle, g.WinnerString())
+			g.Screen.Show()
 			return
 		}
 
 		// Update the ball position
-		g.ball.Update()
-		g.ball.CheckBoundingBox(width, height)
+		g.Ball.Update()
+		g.Ball.CheckBoundingBox(width, height)
 
-		drawSprite(g.screen, g.ball.Sprite.X, g.ball.Sprite.Y, g.ball.Sprite.X+g.ball.Sprite.Width, g.ball.Sprite.Y+g.ball.Sprite.Height, defStyle, g.ball.Draw())
-		drawSprite(g.screen, g.p1.Paddle.Sprite.X, g.p1.Paddle.Sprite.Y, g.p1.Paddle.Sprite.X+g.p1.Paddle.Sprite.Width, g.p1.Paddle.Sprite.Y+g.p1.Paddle.Sprite.Height, paddleStyle, g.p1.Paddle.Draw())
-		drawSprite(g.screen, g.p2.Paddle.Sprite.X, g.p2.Paddle.Sprite.Y, g.p2.Paddle.Sprite.X+g.p2.Paddle.Sprite.Width, g.p2.Paddle.Sprite.Y+g.p2.Paddle.Sprite.Height, paddleStyle, g.p2.Paddle.Draw())
+		drawSprite(g.Screen, g.Ball.Sprite.X, g.Ball.Sprite.Y, g.Ball.Sprite.X+g.Ball.Sprite.Width, g.Ball.Sprite.Y+g.Ball.Sprite.Height, defStyle, g.Ball.Draw())
+		drawSprite(g.Screen, g.P1.Paddle.Sprite.X, g.P1.Paddle.Sprite.Y, g.P1.Paddle.Sprite.X+g.P1.Paddle.Sprite.Width, g.P1.Paddle.Sprite.Y+g.P1.Paddle.Sprite.Height, paddleStyle, g.P1.Paddle.Draw())
+		drawSprite(g.Screen, g.P2.Paddle.Sprite.X, g.P2.Paddle.Sprite.Y, g.P2.Paddle.Sprite.X+g.P2.Paddle.Sprite.Width, g.P2.Paddle.Sprite.Y+g.P2.Paddle.Sprite.Height, paddleStyle, g.P2.Paddle.Draw())
 
 		// Scores
-		drawSprite(g.screen, 10, 1, 1, 1, defStyle, strconv.Itoa(g.p1.Score))
-		drawSprite(g.screen, width-10, 1, 1, 1, defStyle, strconv.Itoa(g.p2.Score))
+		drawSprite(g.Screen, 10, 1, 1, 1, defStyle, strconv.Itoa(g.P1.Score))
+		drawSprite(g.Screen, width-10, 1, 1, 1, defStyle, strconv.Itoa(g.P2.Score))
 
 		// Game Title
-		drawSprite(g.screen, (width/2)-3, 1, (width/2)-3+6, 1, defStyle, "GoPong")
+		drawSprite(g.Screen, (width/2)-3, 1, (width/2)-3+6, 1, defStyle, "GoPong")
 
 		// Check for collisions with the Paddles
-		if checkCollision(g.ball.Sprite, g.p1.Paddle.Sprite) {
-			g.ball.reverseX()
-			g.ball.reverseY()
+		if checkCollision(g.Ball.Sprite, g.P1.Paddle.Sprite) {
+			g.Ball.reverseX()
+			g.Ball.reverseY()
 		}
 
-		if checkCollision(g.ball.Sprite, g.p2.Paddle.Sprite) {
-			g.ball.reverseX()
-			g.ball.reverseY()
+		if checkCollision(g.Ball.Sprite, g.P2.Paddle.Sprite) {
+			g.Ball.reverseX()
+			g.Ball.reverseY()
 		}
 
 		// Check to see if the ball passes left or right edge of the screen
-		if g.ball.Sprite.X <= 0 {
-			g.p2.Score++
-			g.ball.Reset(width/2, height/2, -1, 1)
+		if g.Ball.Sprite.X <= 0 {
+			g.P2.Score++
+			g.Ball.Reset(width/2, height/2, -1, 1)
 		}
 
-		if g.ball.Sprite.X >= width {
-			g.p1.Score++
-			g.ball.Reset(width/2, height/2, 1, 1)
+		if g.Ball.Sprite.X >= width {
+			g.P1.Score++
+			g.Ball.Reset(width/2, height/2, 1, 1)
 		}
 
 		time.Sleep(40 * time.Millisecond)
-		g.screen.Show()
+		g.Screen.Show()
 	}
 }
 
 func (g *Game) CheckGameOver() bool {
-	if g.p1.Score == g.targetScore || g.p2.Score == g.targetScore {
+	if g.P1.Score == g.TargetScore || g.P2.Score == g.TargetScore {
 		return true
 	}
 	return false
 }
 
 func (g *Game) WinnerString() string {
-	if g.p1.Score > g.p2.Score {
+	if g.P1.Score > g.P2.Score {
 		return "P1 Wins"
 	}
 	return "P2 Wins"
